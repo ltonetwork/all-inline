@@ -36,13 +36,16 @@ async function inlineCSS(link: HTMLLinkElement, read: ReadFunction): Promise<voi
 }
 
 async function embedStyle(style: HTMLStyleElement, read: ReadFunction): Promise<void> {
-    if (!style.textContent.match(/url\(/)) return;
+    if (!style.textContent.match(/\burl\s*\(/)) return;
     style.textContent = await css.embed(style.textContent, read);
 }
 
 async function embedInlineStyle(element: Element, read: ReadFunction): Promise<void> {
-    const style = await css.embedInline(element.getAttribute('style'), read);
-    element.setAttribute('style', style);
+    const original = element.getAttribute('style');
+    if (!original.match(/\burl\s*\(/)) return;
+
+    const inlined = await css.embedInline(original, read);
+    element.setAttribute('style', inlined);
 }
 
 export default async function (document: Document, read: ReadFunction): Promise<void> {
@@ -57,7 +60,7 @@ export default async function (document: Document, read: ReadFunction): Promise<
     ]);
 
     const styles = Array.from(document.getElementsByTagName('style'));
-    const inlineStyles = Array.from(document.querySelectorAll('*[style*="url("]'));
+    const inlineStyles = Array.from(document.querySelectorAll('[style*="url"]'))
 
     await Promise.all([
         ...styles.map(style => embedStyle(style, read)),

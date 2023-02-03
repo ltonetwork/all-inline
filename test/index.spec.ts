@@ -59,8 +59,8 @@ describe('allInline()', () => {
     });
 
     describe('script', function () {
-        it('should inline javascript', async () => {
-            const dom = new JSDOM('<script src="main.js">');
+        it('should embed javascript', async () => {
+            const dom = new JSDOM('<script src="main.js"></script>');
 
             await allInline(
                 dom.window.document,
@@ -69,10 +69,32 @@ describe('allInline()', () => {
 
             assert.equal(serializeDom(dom), '<script>const two = 1 + 1;</script>');
         });
+
+        it('should skip an scripts that can\'t be loaded', async () => {
+            const dom = new JSDOM('<script src="main.js"></script>');
+
+            await allInline(
+                dom.window.document,
+                readCallback({src: 'main.js', type: 'text', ret: null}),
+            );
+
+            assert.equal(serializeDom(dom), '<script src="main.js"></script>');
+        });
+
+        it('should skip img nodes without a src attribute', async () => {
+            const dom = new JSDOM('<script>const two = 1 + 1;</script>');
+
+            await allInline(
+                dom.window.document,
+                readCallback(),
+            );
+
+            assert.equal(serializeDom(dom), '<script>const two = 1 + 1;</script>');
+        });
     });
 
     describe('stylesheet', function () {
-        it('should inline css', async () => {
+        it('should embed stylesheet', async () => {
             const dom = new JSDOM('<link rel="stylesheet" href="style.css">');
 
             await allInline(
@@ -106,6 +128,17 @@ describe('allInline()', () => {
             );
 
             assert.equal(serializeDom(dom), '<style>body { background: url(data:image/png;base64,dGVzdA==); }</style>');
+        });
+
+        it('should embed url() in style attribute', async () => {
+            const dom = new JSDOM('<div id="foo" style="background: url(bg.jpg)"></div>');
+
+            await allInline(
+                dom.window.document,
+                readCallback({ src: 'bg.jpg', type: 'data-uri', ret: 'data:image/png;base64,dGVzdA=='}),
+            );
+
+            assert.equal(serializeDom(dom), '<div id="foo" style="background: url(data:image/png;base64,dGVzdA==);"></div>');
         });
     });
 });

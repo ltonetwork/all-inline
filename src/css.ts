@@ -5,7 +5,7 @@ import {ReadFunction} from "./types";
 async function embedDeclarations(declarations: css.Declaration[], read: ReadFunction): Promise<void> {
     const entries: Array<Promise<[string, string]>> = declarations
         .filter(declaration => ("value" in declaration))
-        .map(declaration => Array.from(declaration.value?.matchAll(/url\((.+?)\)/g) || []))
+        .map(declaration => Array.from(declaration.value?.matchAll(/\burl\((.+?)\)/g) || []))
         .flat()
         .map(match => unquote(match[1]))
         .map(src => read(src, 'data-uri').then(content => [src, content]));
@@ -14,7 +14,7 @@ async function embedDeclarations(declarations: css.Declaration[], read: ReadFunc
 
     for (const declaration of declarations) {
         declaration.value = declaration.value?.replace(
-            /url\((.+?)\)/g,
+            /\burl\((.+?)\)/g,
             (match, src) => {
                 const dataUri = map.get(unquote(src));
                 return dataUri ? `url(${dataUri})` : match;
