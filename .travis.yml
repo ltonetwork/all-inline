@@ -6,20 +6,24 @@ branches:
     - main
     - /^v\d+\.\d+\.\d+$/
 
-before_install:
-  - git config --local user.name "LTO Network"
-  - git config --local user.email "info@ltonetwork.com"
-install:
-  - npm install
-script:
-  - npm test
-
 stages:
   - name: test
     if: tag IS blank
+  - name: deploy
+    if: tag IS present
 
 jobs:
+  fast_finish: true
   include:
+    - name: "Test"
+      stage: test
+      before_install:
+        - git config --local user.name "LTO Network"
+        - git config --local user.email "info@ltonetwork.com"
+      install:
+        - npm install
+      script:
+        - npm test
     - name: "Publish GitHub release"
       stage: deploy
       if: branch = master AND type = push
