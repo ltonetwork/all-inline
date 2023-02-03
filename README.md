@@ -1,6 +1,6 @@
 # All inline
 
-Inline images, css, and javascript in an HTML document.
+Inline javascript, stylesheets, and images from an HTML page.
 
 This library is agnostic to how the assets are loaded, allowing it to be used in the browser or with nodejs. 
 

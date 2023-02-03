@@ -1,7 +1,7 @@
 {
   "name": "@ltonetwork/all-inline",
   "version": "0.0.0",
-  "description": "Inline javascript, stylehseets, and images from an html page",
+  "description": "Inline javascript, stylesheets, and images from an HTML page",
   "scripts": {
     "clean": "rm -rf ./lib ./dist",
     "build": "webpack --mode production",
@@ -22,8 +22,10 @@
     "@types/mocha": "^10.0.1",
     "jsdom": "^21.1.0",
     "mocha": "^10.2.0",
+    "ts-loader": "^9.4.2",
     "typescript": "^4.9.5",
-    "webpack": "^5.75.0"
+    "webpack": "^5.75.0",
+    "webpack-cli": "^5.0.1"
   },
   "dependencies": {
     "css": "^3.0.0"
