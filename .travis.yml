@@ -10,7 +10,6 @@ stages:
   - name: test
     if: tag IS blank
   - name: deploy
-    if: tag IS present
 
 jobs:
   fast_finish: true
@@ -26,7 +25,7 @@ jobs:
         - npm test
     - name: "Publish GitHub release"
       stage: deploy
-      if: branch = master AND type = push
+      if: branch = main AND type = push
       before_script:
         - CURRENT_VERSION=$(git describe --tags --abbrev=0)
         - |
@@ -45,7 +44,7 @@ jobs:
         provider: releases
         api_key:
           secure: "LvTO4CoOuZIwS/rso/RSO+17RtJ72nk2vIi9UqdFb9+fs01ek1yXQKCeRv28yuRLnXYwAfYlZxnPcpVPUPy3MXnEKwvlZLoq22wzju4xlrdcRxNQPbMpUBAfj1G2o4N4kvBgMnp0UH+T6+2YBjHQR1VVFMKnHf4+LdT28I/bqVabUrqapPBy7BHL5ARa16obJsfb93lqJTzwtgCmExLmRsEaP3hd+BTvVmEF9xbjC/Fellm1NJGp9VPFBXpwiw9pchxGLZbbvJj5deBjfgIRCv66vjpXMDZidc16oAz2iNEcHL27pclnU6pebL7N9D6hPCuURXCSe+a8BJTFC7ctt9aZ0QiM2yE973+2kNGs7rI1pyDV7F2zLESiF5XkmY2hQl0rcnUCO55AM7G6jrh8GUJdJtwMU7FZKcUOPYNfqhgV9oVOqKfl6wJS6IA92FWa0Akw9iKQC2SFYOJzEniNOYHNDvY2gR70VfPw6ku0ipprgA2OELSx4LvLWR4zMsaJ/DMcOPPy+G/nnZdiEGANxLubapSv1HFXVZnpPJlEbtB3Mgvo726F7b3/LpbOG8niO+jHZNG15u9if7amd8l06kGAyspimlvhkDjTazc2o5l5BCIJvXjpSSKJ/4h2qX9Cr33PkLjDVk9nlfovVAaKhonetIWp2QPfR9BB8L9yDyA="
-        skip_cleanup: true
+        cleanup: false
         on:
           all_branches: true
         file_glob: true
@@ -64,4 +63,4 @@ jobs:
           secure: "Us9cZrVm1x9gVoG8mDGQVuvJidEvxcgddpagpQPpBx/WyyD8fJ6DEFKQwnkSWeVjC7ZrV5LDTsn7NLe1jhP2674oWwtnaj1Ia6+/+UFfooHX1a0Zr2OB8HhgmyJLdhAV5KxvyhxLkptat5KU0Z0DvxQJKg9Vx8Sp7BeyNT0Ya2PHH1OLP+cfi1Yl4ailuTIb11kEs6SXRDf0PlfS9wxJktzfOycuaGiV9S1ywzXWmLpguiNVGywX22EtFFUY2o8dr3rdQsAQhqVT9fU8P6lC4V5E3FoLos/Mc8TexY5eCsDmVgpylN08F8nEhUsP2AYxx0AmH3ZyhgrB69r9Pxz0vjovfZ9xXz/LB5gABAvto9GzrOn5ElSbyY9o01s67t4HByB2pv/lcSLTUk2FDZAw9qLniyP0m6r4Nx/tK6l/k71muZdIwR0vF2eie1AVjx6/vLAsFpboSRGPYjlEN0BhiKd7b21CK/8i4n2+Noxy1uJ4kP4q30bsJyHEiyzqxwNSqgo7tMaHWp6YN1H7ehQ5RPAkNvVI9hfF/JLX+xQe+fnE18Ja/YPaa0JG3VveM7iLqcq9d/MbXgT8cTVM6DnfYF/syOLrKvFd9jsvijRIf+PJ9p3J8qQhhCpueSrylklPEvLplUY700V3+ienXwKlfdcE6yVjihT4wQi441LvCzw="
         on:
           tags: true
-        skip_cleanup: true
+        cleanup: false
