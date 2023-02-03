@@ -1,0 +1,27 @@
+{
+  "name": "@ltonetwork/all-inline",
+  "version": "0.0.0",
+  "description": "Inline javascript, stylehseets, and images from an html page",
+  "scripts": {
+    "clean": "rm -rf ./lib ./dist",
+    "build": "webpack --mode production",
+    "compile": "tsc -p ./tsconfig.json",
+    "test": "mocha --require ts-node/register 'test/**/*.spec.ts'",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint-fix": "eslint src --ext .ts,.tsx --fix"
+  },
+  "author": "LTO Network",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "files": [
+    "lib"
+  ],
+  "devDependencies": {
+    "@types/css": "^0.0.33",
+    "typescript": "^4.9.5",
+    "webpack": "^5.75.0"
+  },
+  "dependencies": {
+    "css": "^3.0.0"
+  }
+}
