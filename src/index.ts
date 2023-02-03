@@ -6,6 +6,7 @@ async function embedImg(img: HTMLImageElement, read: ReadFunction): Promise<void
 
     const src = img.getAttribute('src');
     const contents = await read(src, 'data-uri');
+    if (!contents) return;
 
     img.setAttribute('src', contents);
 }
@@ -18,7 +19,7 @@ async function inlineScript(script: HTMLScriptElement, read: ReadFunction): Prom
     if (!contents) return;
 
     script.removeAttribute('src');
-    script.innerText = contents;
+    script.textContent = contents;
 }
 
 async function inlineCSS(link: HTMLLinkElement, read: ReadFunction): Promise<void> {
@@ -29,11 +30,14 @@ async function inlineCSS(link: HTMLLinkElement, read: ReadFunction): Promise<voi
     if (!contents) return;
 
     const style = link.ownerDocument.createElement('style');
-    style.innerText = contents;
+    style.textContent = contents;
+
+    link.replaceWith(style);
 }
 
 async function embedStyle(style: HTMLStyleElement, read: ReadFunction): Promise<void> {
-    style.innerText = await css.embed(style.innerText, read);
+    if (!style.textContent.match(/url\(/)) return;
+    style.textContent = await css.embed(style.textContent, read);
 }
 
 async function embedInlineStyle(element: Element, read: ReadFunction): Promise<void> {
