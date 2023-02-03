@@ -11,6 +11,10 @@ The following HTML elements and CSS data types are inlined:
 * Images
 * CSS `url()` data types
 
+# Installation
+
+    npm i all-inline
+
 # Usage
 
 ```js
@@ -30,9 +34,13 @@ const dom = new JSDOM(`
 `);
 
 await allInline(dom.window.document, async (src, type) => {
+    if (type === 'text') {
+        return await fs.readFile(src, 'utf8');
+    }
+    
     const mimeType = mime.lookup(src) || 'application/octet-stream';
     const encoding = 'base64';
-    const data = (await fs.readFile(src)).toString(encoding);
+    const data = await fs.readFile(src, encoding);
     return `data:${mimeType};${encoding},${data}`;
 });
 

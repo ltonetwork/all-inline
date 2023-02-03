@@ -1,5 +1,5 @@
 {
-  "name": "@ltonetwork/all-inline",
+  "name": "all-inline",
   "version": "0.0.0",
   "description": "Inline javascript, stylesheets, and images from an HTML page",
   "scripts": {
