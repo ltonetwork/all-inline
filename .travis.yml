@@ -11,16 +11,17 @@ stages:
     if: tag IS blank
   - name: deploy
 
+before_install:
+  - git config --local user.name "LTO Network"
+  - git config --local user.email "info@ltonetwork.com"
+install:
+  - npm install
+
 jobs:
   fast_finish: true
   include:
     - name: "Test"
       stage: test
-      before_install:
-        - git config --local user.name "LTO Network"
-        - git config --local user.email "info@ltonetwork.com"
-      install:
-        - npm install
       script:
         - npm test
     - name: "Publish GitHub release"
@@ -45,6 +46,7 @@ jobs:
         api_key:
           secure: "QZM44LFLHQDjQgiUXUN2WpOkKZQEkYVMocrFWs/JsY3hm/0575P/bcFlcSuqUsrYfS/4qHHwLp/Ovw0chvuygq9jeXH2Qbbk6pSxydSlpdhoJJfY8+26Xl2eMS0AZm3r6VNf8m/bvSt0CL/yIq65mEmVfEbmhSMzBTQ0u9l/xnQop9sgRP5UgLosC0J9LeW64g8rWYZ7AhG0yU5ZisTPrUgl0VWloQi7U3joqICs/vyrdmNd2HyMVdAv6W3861sQTNqn1Q6pASIBFlBrotsxDj2JrYmHH8Xuwsvtmpjy5cE/N3adeUOAiGkdpfBf9viNc88eCYZL9h2msj3v6f3fR04aub4O5BA8ztwvzdmz61Y0t3D0JdWRegwJ8kxRjs57oG3s1lh2I6joriEPt4eTR0l4dtSuJ6+WAokWnbMUNV+fhivAgwgUF1RBNNkpoY/Osol32Y5qJsZE5q9qmex8SuL/hnxF41Up+IeAs+mReLqjRQ/HDdDrvF+Y8PN0pHwP/3uEaimsgp72qUesbHpcraVhtHs8cGkKfCCo1B8wnR/OALFlqUxTx4mYaFUHOyq0Ab8kRB9amkRSh3nzDBOglcbiBP/KuDNG+S8afl5/O0+g7iXhnGmwqss3hFr8kvsDbyhZpKmJXX6q9aM4XDLdH9C46hgufAoSkGPHVpUjtSs="
         cleanup: false
+        skip_cleanup: true
         on:
           all_branches: true
         file_glob: true
@@ -64,3 +66,4 @@ jobs:
         on:
           tags: true
         cleanup: false
+        skip_cleanup: true
