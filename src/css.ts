@@ -1,11 +1,15 @@
-import * as css from 'css';
+import {CssCommentAST, CssDeclarationAST, CssRuleAST, CssStylesheetAST, parse, stringify} from '@adobe/css-tools'
 import unquote from './unquote';
 import {ReadFunction} from "./types";
 
-async function embedDeclarations(declarations: css.Declaration[], read: ReadFunction): Promise<void> {
+async function embedDeclarations(
+    declarations: Array<CssDeclarationAST|CssCommentAST>,
+    read: ReadFunction
+): Promise<void> {
     const entries: Array<Promise<[string, string]>> = declarations
         .filter(declaration => ("value" in declaration))
-        .map(declaration => Array.from(declaration.value?.matchAll(/\burl\((.+?)\)/g) || []))
+        .map((declaration: CssDeclarationAST) =>
+            Array.from(declaration.value?.matchAll(/\burl\((.+?)\)/g) || []))
         .flat()
         .map(match => unquote(match[1]))
         .map(src => read(src, 'data-uri').then(content => [src, content]));
@@ -13,6 +17,8 @@ async function embedDeclarations(declarations: css.Declaration[], read: ReadFunc
     const map = new Map(await Promise.all(entries));
 
     for (const declaration of declarations) {
+        if (!("value" in declaration)) continue;
+
         declaration.value = declaration.value?.replace(
             /\burl\((.+?)\)/g,
             (match, src) => {
@@ -23,27 +29,27 @@ async function embedDeclarations(declarations: css.Declaration[], read: ReadFunc
     }
 }
 
-async function embedAst(ast: css.Stylesheet, read: ReadFunction): Promise<void> {
+async function embedAst(ast: CssStylesheetAST, read: ReadFunction): Promise<void> {
     await Promise.all((ast.stylesheet?.rules || [])
-        .map((rule: css.Rule) => rule.declarations!)
+        .map((rule: CssRuleAST) => rule.declarations!)
         .filter(declarations => !!declarations)
-        .map(declarations => embedDeclarations(declarations, read))
+        .map((declarations: CssDeclarationAST[]) => embedDeclarations(declarations, read))
     );
 }
 
 export async function embed(style: string, read: ReadFunction): Promise<string> {
-    const ast = css.parse(style);
+    const ast = parse(style);
     await embedAst(ast, read);
 
-    return css.stringify(ast);
+    return stringify(ast);
 }
 
 export async function embedInline(style: string, read: ReadFunction): Promise<string> {
-    const ast = css.parse(`* { ${style} }`);
+    const ast = parse(`* { ${style} }`);
 
-    (ast.stylesheet?.rules[0] as css.Rule).selectors = [];
+    (ast.stylesheet?.rules[0] as CssRuleAST).selectors = [];
     await embedAst(ast, read);
 
-    return css.stringify(ast)
+    return stringify(ast)
         .replace(/^\s*\{\s*|\s*}\s*$/g, '');
 }

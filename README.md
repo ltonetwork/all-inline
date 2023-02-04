@@ -53,20 +53,3 @@ console.log(dom.serialize());
     <img src="data:..."/>
 */
 ```
-
-## Note
-
-The `source-map` and `source-map-resolve` libraries are a dependency of the `css` library, but aren't
-used for `all-inline`. When bundling your JavaScript to be deployed on the web, you can exclude these
-libs to reduce the file size by 30kb.
-
-Add the following to `webpack.config.js`:
-
-```js
-module.exports = {
-    externals: {
-        "source-map": "null",
-        "source-map-resolve": "null",
-    }
-}
-```
