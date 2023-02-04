@@ -11,16 +11,16 @@ The following HTML elements and CSS data types are inlined:
 * Images
 * CSS `url()` data types
 
-# Installation
+## Installation
 
     npm i all-inline
 
-# Usage
+## Usage
 
 ```js
 import allInline from "all-inline";
 
-// NodeJS specific libraries. The browser supports this natively.
+// NodeJS specific libraries, not needed for the browser.
 import { JSDOM } from "jsdom";
 import mime from "mime-types";
 import fs from "fs/promises";
@@ -52,4 +52,21 @@ console.log(dom.serialize());
     <div style="background-image: url('data:...');"></div>
     <img src="data:..."/>
 */
+```
+
+## Note
+
+The `source-map` and `source-map-resolve` libraries are a dependency of the `css` library, but aren't
+used for `all-inline`. When bundling your JavaScript to be deployed on the web, you can exclude these
+libs to reduce the file size by 30kb.
+
+Add the following to `webpack.config.js`:
+
+```js
+module.exports = {
+    externals: {
+        "source-map": "null",
+        "source-map-resolve": "null",
+    }
+}
 ```

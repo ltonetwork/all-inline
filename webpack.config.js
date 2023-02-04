@@ -33,6 +33,10 @@ module.exports = {
             "path": false,
         },
     },
+    externals: {
+        "source-map": "undefined",
+        "source-map-resolve": "undefined",
+    },
     performance: {
         maxEntrypointSize: 512000,
         maxAssetSize: 512000
