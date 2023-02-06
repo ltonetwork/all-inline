@@ -48,7 +48,7 @@ async function embedInlineStyle(element: Element, read: ReadFunction): Promise<v
     element.setAttribute('style', inlined);
 }
 
-export default async function (document: Document, read: ReadFunction): Promise<void> {
+export default async function (document: Document|Element, read: ReadFunction): Promise<void> {
     const images = Array.from(document.getElementsByTagName('img'));
     const scripts = Array.from(document.getElementsByTagName('script'));
     const css = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));

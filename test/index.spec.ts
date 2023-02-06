@@ -35,6 +35,17 @@ describe('allInline()', () => {
             assert.equal(serializeDom(dom), '<img src="data:image/png;base64,dGVzdA==" alt="A">');
         });
 
+        it('should work on a child element', async () => {
+            const dom = new JSDOM('<img src="header.png"><div id="template"><img src="foo.png"></div>');
+
+            await allInline(
+                dom.window.document.getElementById('template'),
+                readCallback({src: 'foo.png', type: 'data-uri', ret: 'data:image/png;base64,dGVzdA=='}),
+            );
+
+            assert.equal(serializeDom(dom), '<img src="header.png"><div id="template"><img src="data:image/png;base64,dGVzdA=="></div>');
+        });
+
         it('should skip an images that can\'t be loaded', async () => {
             const dom = new JSDOM('<img src="foo.png">');
 

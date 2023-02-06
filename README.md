@@ -53,3 +53,6 @@ console.log(dom.serialize());
     <img src="data:..."/>
 */
 ```
+
+The function takes a DOM `Document` or `Element` as first argument. If an element is passed,
+only the children are modified.
