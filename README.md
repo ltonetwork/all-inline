@@ -54,8 +54,21 @@ console.log(dom.serialize());
 */
 ```
 
+### Arguments
+
+#### Document
+
 The function takes a DOM `Document` or `Element` as first argument. If an element is passed,
 only the children are modified.
 
-In the callback, the `type` argument can be either `"text"` or `"data-uri"`. Throw an error if
-the file is binary and text is required.
+#### Callback
+
+The callback should have 2 arguments `src` and `type`.
+
+* The `src` argument is the path to the file.
+* The `type` argument can be either `"text"` or `"data-uri"`. _The callback should throw an
+error if the file is binary and text is required._
+
+The callback must return the contents of the file as string. Either as plain text or encoded
+as [data-uri](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/Data_URLs)
+(depending on the `type` argument).
