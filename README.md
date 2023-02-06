@@ -28,7 +28,7 @@ import fs from "fs/promises";
 const dom = new JSDOM(`
     <script src="main.js"></script>
     <link rel="stylesheet" href="main.css"/>
-    <style> div { background-image: url('path/to/file'); } </style>
+    <style>div { background-image: url('path/to/file'); }</style>
     <div style="background-image: url('path/to/file');"></div>
     <img src="path/to/file"/>
 `);
@@ -56,3 +56,6 @@ console.log(dom.serialize());
 
 The function takes a DOM `Document` or `Element` as first argument. If an element is passed,
 only the children are modified.
+
+In the callback, the `type` argument can be either `"text"` or `"data-uri"`. Throw an error if
+the file is binary and text is required.
