@@ -7,9 +7,9 @@ This library is agnostic to how the assets are loaded, allowing it to be used in
 The following HTML elements and CSS data types are inlined:
 * Scripts
 * Linked CSS stylesheets
-* Imported CSS stylesheets
-* Images
-* CSS `url()` data types
+* Images, videos, and audio
+* Iframes
+* CSS `url()` data types (in `<style>` element and `style` attribute)
 
 ## Installation
 
@@ -27,10 +27,12 @@ import fs from "fs/promises";
 
 const dom = new JSDOM(`
     <script src="main.js"></script>
-    <link rel="stylesheet" href="main.css"/>
+    <link rel="stylesheet" href="main.css">
     <style>div { background-image: url('path/to/file'); }</style>
     <div style="background-image: url('path/to/file');"></div>
-    <img src="path/to/file"/>
+    <img src="path/to/file">
+    <video><source src="path/to/file" type="video/mp4"></video>
+    <iframe src="path/to/file"></iframe>
 `);
 
 await allInline(dom.window.document, async (src, type) => {
@@ -50,7 +52,9 @@ console.log(dom.serialize());
     <style>@font-face { src: url('data:...'); }</style>
     <style>div { background-image: url('data:...'); }</style>
     <div style="background-image: url('data:...');"></div>
-    <img src="data:..."/>
+    <img src="data:...">
+    <video><source src="data:..." type="video/mp4"></video>
+    <iframe srcdoc="..."></iframe>
 */
 ```
 
