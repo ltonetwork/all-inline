@@ -1,14 +1,30 @@
 import * as css from './css';
 import {ReadFunction} from "./types";
 
-async function embedImg(img: HTMLImageElement, read: ReadFunction): Promise<void> {
-    if (!img.hasAttribute('src')) return;
+async function embedSrc(element: Element, read: ReadFunction): Promise<void> {
+    if (!element.hasAttribute('src')) return;
 
-    const src = img.getAttribute('src');
+    const src = element.getAttribute('src');
     const contents = await read(src, 'data-uri');
     if (!contents) return;
 
-    img.setAttribute('src', contents);
+    element.setAttribute('src', contents);
+}
+
+async function embedSrcSet(element: Element, read: ReadFunction): Promise<void> {
+    if (!element.hasAttribute('srcset')) return;
+
+    const srcset = element.getAttribute('srcset');
+    const entries: Array<Promise<[string, string]>> = srcset.split(',')
+        .map(item => item.match(/\S+/)[0])
+        .map(src => read(src, 'data-uri').then(content => [src, content]));
+    const map = new Map(await Promise.all(entries));
+
+    const embeddedSrcset = srcset.split(',')
+        .map(item => item.replace(/\S+/, src => map.get(src) || src))
+        .join(',');
+
+    element.setAttribute('srcset', embeddedSrcset);
 }
 
 async function inlineScript(script: HTMLScriptElement, read: ReadFunction): Promise<void> {
@@ -35,6 +51,17 @@ async function inlineCSS(link: HTMLLinkElement, read: ReadFunction): Promise<voi
     link.replaceWith(style);
 }
 
+async function inlineIframe(iframe: HTMLIFrameElement, read: ReadFunction): Promise<void> {
+    if (!iframe.hasAttribute('src')) return;
+
+    const src = iframe.getAttribute('src');
+    const contents = await read(src, 'text');
+    if (!contents) return;
+
+    iframe.removeAttribute('src');
+    iframe.setAttribute('srcdoc', contents);
+}
+
 async function embedStyle(style: HTMLStyleElement, read: ReadFunction): Promise<void> {
     if (!style.textContent.match(/\burl\s*\(/)) return;
     style.textContent = await css.embed(style.textContent, read);
@@ -49,14 +76,19 @@ async function embedInlineStyle(element: Element, read: ReadFunction): Promise<v
 }
 
 export default async function (document: Document|Element, read: ReadFunction): Promise<void> {
-    const images = Array.from(document.getElementsByTagName('img'));
+    const sources = Array.from(document.querySelectorAll('*[src]'))
+        .filter(el => !['IFRAME', 'SCRIPT'].includes(el.tagName.toUpperCase()));
+    const sourceSets = Array.from(document.querySelectorAll('*[srcset]'));
     const scripts = Array.from(document.getElementsByTagName('script'));
     const css = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
+    const iframes = Array.from(document.getElementsByTagName('iframe'));
 
     await Promise.all([
-        ...images.map(img => embedImg(img, read)),
+        ...sources.map(img => embedSrc(img, read)),
+        ...sourceSets.map(img => embedSrcSet(img, read)),
         ...scripts.map(script => inlineScript(script, read)),
         ...css.map(link => inlineCSS(link as HTMLLinkElement, read)),
+        ...iframes.map(iframe => inlineIframe(iframe, read)),
     ]);
 
     const styles = Array.from(document.getElementsByTagName('style'));

@@ -23,8 +23,8 @@ function readCallback(...expected: {src: string, type: 'text'|'data-uri', ret: s
 }
 
 describe('allInline()', () => {
-    describe('image', function () {
-        it('should embed images', async () => {
+    describe('src', function () {
+        it('should embed an image', async () => {
             const dom = new JSDOM('<img src="foo.png" alt="A">');
 
             await allInline(
@@ -33,6 +33,17 @@ describe('allInline()', () => {
             );
 
             assert.equal(serializeDom(dom), '<img src="data:image/png;base64,dGVzdA==" alt="A">');
+        });
+
+        it('should embed a video', async () => {
+            const dom = new JSDOM('<video><source src="foo.mp4" type="video/mp4"></video>');
+
+            await allInline(
+                dom.window.document,
+                readCallback({src: 'foo.mp4', type: 'data-uri', ret: 'data:image/png;base64,dGVzdA=='}),
+            );
+
+            assert.equal(serializeDom(dom), '<video><source src="data:image/png;base64,dGVzdA==" type="video/mp4"></video>');
         });
 
         it('should work on a child element', async () => {
@@ -46,7 +57,7 @@ describe('allInline()', () => {
             assert.equal(serializeDom(dom), '<img src="header.png"><div id="template"><img src="data:image/png;base64,dGVzdA=="></div>');
         });
 
-        it('should skip an images that can\'t be loaded', async () => {
+        it('should skip if src can\'t be loaded', async () => {
             const dom = new JSDOM('<img src="foo.png">');
 
             await allInline(
@@ -56,16 +67,35 @@ describe('allInline()', () => {
 
             assert.equal(serializeDom(dom), '<img src="foo.png">');
         });
+    });
 
-        it('should skip img nodes without a src attribute', async () => {
-            const dom = new JSDOM('<img>');
+    describe('srcset', function () {
+        it('should embed a picture', async () => {
+            const dom = new JSDOM('<picture><source srcset="foo.png, foo-1.5x.png 1.5x"></picture>');
 
             await allInline(
                 dom.window.document,
-                readCallback(),
+                readCallback(
+                    {src: 'foo.png', type: 'data-uri', ret: 'data:image/png;base64,dGVzdA=='},
+                    {src: 'foo-1.5x.png', type: 'data-uri', ret: 'data:image/png;base64,MS41eA=='},
+                ),
             );
 
-            assert.equal(serializeDom(dom), '<img>');
+            assert.equal(serializeDom(dom), '<picture><source srcset="data:image/png;base64,dGVzdA==, data:image/png;base64,MS41eA== 1.5x"></picture>');
+        });
+
+        it('should skip if src can\'t be loaded', async () => {
+            const dom = new JSDOM('<picture><source srcset="foo.png, foo-1.5x.png 1.5x"></picture>');
+
+            await allInline(
+                dom.window.document,
+                readCallback(
+                    {src: 'foo.png', type: 'data-uri', ret: null},
+                    {src: 'foo-1.5x.png', type: 'data-uri', ret: 'data:image/png;base64,MS41eA=='},
+                ),
+            );
+
+            assert.equal(serializeDom(dom), '<picture><source srcset="foo.png, data:image/png;base64,MS41eA== 1.5x"></picture>');
         });
     });
 
@@ -92,7 +122,7 @@ describe('allInline()', () => {
             assert.equal(serializeDom(dom), '<script src="main.js"></script>');
         });
 
-        it('should skip img nodes without a src attribute', async () => {
+        it('should skip script elements without a src attribute', async () => {
             const dom = new JSDOM('<script>const two = 1 + 1;</script>');
 
             await allInline(
@@ -150,6 +180,41 @@ describe('allInline()', () => {
             );
 
             assert.equal(serializeDom(dom), '<div id="foo" style="background: url(data:image/png;base64,dGVzdA==);"></div>');
+        });
+    });
+
+    describe('iframe', function () {
+        it('should inline an iframe', async () => {
+            const dom = new JSDOM('<iframe src="hello.html"></iframe>');
+
+            await allInline(
+                dom.window.document,
+                readCallback({src: 'hello.html', type: 'text', ret: '<p>Hello World!</p>'}),
+            );
+
+            assert.equal(serializeDom(dom), '<iframe srcdoc="<p>Hello World!</p>"></iframe>');
+        });
+
+        it('should skip iframes without a src attribute', async () => {
+            const dom = new JSDOM('<iframe srcdoc="abc"></iframe>');
+
+            await allInline(
+                dom.window.document,
+                readCallback(),
+            );
+
+            assert.equal(serializeDom(dom), '<iframe srcdoc="abc"></iframe>');
+        });
+
+        it('should skip if src can\'t be loaded', async () => {
+            const dom = new JSDOM('<iframe src="hello.html"></iframe>');
+
+            await allInline(
+                dom.window.document,
+                readCallback({src: 'hello.html', type: 'text', ret: null}),
+            );
+
+            assert.equal(serializeDom(dom), '<iframe src="hello.html"></iframe>');
         });
     });
 });

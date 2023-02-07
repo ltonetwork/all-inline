@@ -71,4 +71,5 @@ error if the file is binary and text is required._
 
 The callback must return the contents of the file as string. Either as plain text or encoded
 as [data-uri](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/Data_URLs)
-(depending on the `type` argument).
+(depending on the `type` argument). If the callback returns `null`, inlining that element will
+be skipped.
