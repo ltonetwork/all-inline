@@ -17,7 +17,6 @@
     "lib"
   ],
   "devDependencies": {
-    "@types/css": "^0.0.33",
     "@types/jsdom": "^20.0.1",
     "@types/mocha": "^10.0.1",
     "jsdom": "^21.1.0",
