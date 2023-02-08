@@ -1,8 +1,16 @@
-import {CssCommentAST, CssDeclarationAST, CssRuleAST, CssStylesheetAST, parse, stringify} from '@adobe/css-tools'
+import {
+    CssAtRuleAST,
+    CssCommentAST,
+    CssDeclarationAST,
+    CssMediaAST,
+    CssRuleAST,
+    parse,
+    stringify
+} from '@adobe/css-tools'
 import unquote from './unquote';
 import {ReadFunction} from "./types";
 
-async function embedDeclarations(
+async function processUrlFn(
     declarations: Array<CssDeclarationAST|CssCommentAST>,
     read: ReadFunction
 ): Promise<void> {
@@ -29,17 +37,31 @@ async function embedDeclarations(
     }
 }
 
-async function embedAst(ast: CssStylesheetAST, read: ReadFunction): Promise<void> {
-    await Promise.all((ast.stylesheet?.rules || [])
+async function embedRulesAst(rules: CssAtRuleAST[], read: ReadFunction): Promise<void> {
+    await Promise.all(rules
         .map((rule: CssRuleAST) => rule.declarations!)
         .filter(declarations => !!declarations)
-        .map((declarations: CssDeclarationAST[]) => embedDeclarations(declarations, read))
+        .map((declarations: CssDeclarationAST[]) => processUrlFn(declarations, read))
     );
+}
+
+async function embedMediaAst(rules: CssAtRuleAST[], read: ReadFunction): Promise<void> {
+    await Promise.all(rules
+        .filter(rule => rule.type === 'media')
+        .map((rule: CssMediaAST) => embedRulesAst(rule.rules, read))
+    );
+}
+
+async function embedAst(rules: CssAtRuleAST[], read: ReadFunction): Promise<void> {
+    await Promise.all([
+        embedRulesAst(rules, read),
+        embedMediaAst(rules, read),
+    ]);
 }
 
 export async function embed(style: string, read: ReadFunction): Promise<string> {
     const ast = parse(style);
-    await embedAst(ast, read);
+    await embedAst(ast.stylesheet.rules, read);
 
     return stringify(ast);
 }
@@ -47,8 +69,8 @@ export async function embed(style: string, read: ReadFunction): Promise<string> 
 export async function embedInline(style: string, read: ReadFunction): Promise<string> {
     const ast = parse(`* { ${style} }`);
 
-    (ast.stylesheet?.rules[0] as CssRuleAST).selectors = [];
-    await embedAst(ast, read);
+    (ast.stylesheet.rules[0] as CssRuleAST).selectors = [];
+    await embedRulesAst(ast.stylesheet.rules, read);
 
     return stringify(ast)
         .replace(/^\s*\{\s*|\s*}\s*$/g, '');

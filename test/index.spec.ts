@@ -181,6 +181,17 @@ describe('allInline()', () => {
 
             assert.equal(serializeDom(dom), '<div id="foo" style="background: url(data:image/png;base64,dGVzdA==);"></div>');
         });
+
+        it('should be applied to @media rules', async () => {
+            const dom = new JSDOM('<style>@media screen { body { background: url("bg.jpg"); } }</style>');
+
+            await allInline(
+                dom.window.document,
+                readCallback({ src: 'bg.jpg', type: 'data-uri', ret: 'data:image/png;base64,dGVzdA=='}),
+            );
+
+            assert.equal(serializeDom(dom), '<style>@media screen { body { background: url(data:image/png;base64,dGVzdA==); } }</style>');
+        })
     });
 
     describe('iframe', function () {
