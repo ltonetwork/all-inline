@@ -2,6 +2,7 @@ import {
     CssAtRuleAST,
     CssCommentAST,
     CssDeclarationAST,
+    CssImportAST,
     CssMediaAST,
     CssRuleAST,
     parse,
@@ -10,7 +11,7 @@ import {
 import unquote from './unquote';
 import {ReadFunction} from "./types";
 
-async function processUrlFn(
+async function processUrl(
     declarations: Array<CssDeclarationAST|CssCommentAST>,
     read: ReadFunction
 ): Promise<void> {
@@ -37,11 +38,22 @@ async function processUrlFn(
     }
 }
 
+async function processImport(rule: CssImportAST, read: ReadFunction): Promise<CssAtRuleAST[]> {
+    const src = unquote(rule.import.replace(/url\((.*)\)/, '$1'));
+    const content = await read(src, 'text');
+    if (!content) return [rule];
+
+    const rules = parse(content).stylesheet.rules;
+    await embedAst(rules, read);
+
+    return rules;
+}
+
 async function embedRulesAst(rules: CssAtRuleAST[], read: ReadFunction): Promise<void> {
     await Promise.all(rules
         .map((rule: CssRuleAST) => rule.declarations!)
         .filter(declarations => !!declarations)
-        .map((declarations: CssDeclarationAST[]) => processUrlFn(declarations, read))
+        .map((declarations: CssDeclarationAST[]) => processUrl(declarations, read))
     );
 }
 
@@ -52,15 +64,26 @@ async function embedMediaAst(rules: CssAtRuleAST[], read: ReadFunction): Promise
     );
 }
 
+async function embedImportAst(rules: CssAtRuleAST[], read: ReadFunction): Promise<void> {
+    await Promise.all(rules.map((rule, index) => {
+        if (rule.type !== 'import') return;
+
+        return processImport(rule, read)
+            .then(newRules => rules.splice(index, 1, ...newRules))
+    }));
+}
+
 async function embedAst(rules: CssAtRuleAST[], read: ReadFunction): Promise<void> {
     await Promise.all([
         embedRulesAst(rules, read),
         embedMediaAst(rules, read),
     ]);
+
+    await embedImportAst(rules, read);
 }
 
 export async function embed(style: string, read: ReadFunction): Promise<string> {
-    const ast = parse(style);
+    const ast = parse(style, { source: '/style.css' });
     await embedAst(ast.stylesheet.rules, read);
 
     return stringify(ast);

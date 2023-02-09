@@ -191,7 +191,36 @@ describe('allInline()', () => {
             );
 
             assert.equal(serializeDom(dom), '<style>@media screen { body { background: url(data:image/png;base64,dGVzdA==); } }</style>');
-        })
+        });
+
+        it('should inline stylesheets from @import statements', async () => {
+            const dom = new JSDOM('<style>@import url("base.css"); a { color: blue; }</style>', {
+                url: "https://example.org/",
+            });
+
+            await allInline(
+                dom.window.document,
+                readCallback({ src: 'base.css', type: 'text', ret: 'body { color: black; }'}),
+            );
+
+            assert.equal(serializeDom(dom), '<style>body { color: black; } a { color: blue; }</style>');
+        });
+
+        it('should embed url() from imported stylesheets', async () => {
+            const dom = new JSDOM('<style>@import url("base.css");</style>', {
+                url: "https://example.org/",
+            });
+
+            await allInline(
+                dom.window.document,
+                readCallback(
+                { src: 'base.css', type: 'text', ret: 'body { background: url(bg.jpg); }'},
+                    { src: 'bg.jpg', type: 'data-uri', ret: 'data:image/png;base64,dGVzdA=='},
+                ),
+            );
+
+            assert.equal(serializeDom(dom), '<style>body { background: url(data:image/png;base64,dGVzdA==); }</style>');
+        });
     });
 
     describe('iframe', function () {
