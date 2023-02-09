@@ -10,6 +10,7 @@ The following HTML elements and CSS data types are inlined:
 * Images, videos, and audio
 * Iframes
 * CSS `url()` data types (in `<style>` element and `style` attribute)
+* Imported stylesheets through `@import`
 
 ## Installation
 
@@ -77,3 +78,61 @@ The callback must return the contents of the file as string. Either as plain tex
 as [data-uri](https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/Data_URLs)
 (depending on the `type` argument). If the callback returns `null`, inlining that element will
 be skipped.
+
+## Notes
+
+### Relative paths in CSS
+
+For CSS, relative paths are automatically prefixed with the path of the css file.
+
+```css
+/* my/path/style.css */
+body {
+  background-image: url(bg.jpg);
+}
+```
+
+The read function will be called as
+
+```js
+read('my/path/bg.jpg', 'data-uri');
+```
+
+### Inline iframe
+
+The HTML contents for iframes is inlined as-is. You might need to apply all-inline to the
+contents in the `read` callback.
+
+```js
+import { default as allInline, wrapRead } from "all-inline";
+
+async function read(src, type) {
+    if (src.endsWith('.html')) {
+        const contents = await fs.readFile(src, 'utf8');
+        const dom = new JSDom(contents);
+        
+        await allInline(dom.window.document, wrapRead(src, read));
+        return dom.serialize();
+    }
+    
+    //...
+}
+
+await allInline(dom.window.document, read);
+```
+
+In the browser, use [`DomParser`](https://developer.mozilla.org/en-US/docs/Web/API/DOMParser)
+instead of `JSDom` to get a DOM `Document` object from the HTML content.
+
+### External resources
+
+The `src` argument of the `read` callback can be a local path or a URL. You should throw an
+error if loading external resources isn't supported.
+
+```js
+async function read(src, type) {
+    if (src.match(/^\w+:\/\//)) throw Error(`Unable to load external resource: ${src}`);
+    
+    // ...
+}
+```

@@ -1,6 +1,6 @@
 // noinspection CssUnknownTarget
 
-import allInline from "../src/index";
+import { default as allInline, wrapRead } from "../src/index";
 import { JSDOM } from "jsdom";
 import * as assert from "assert";
 
@@ -221,6 +221,36 @@ describe('allInline()', () => {
 
             assert.equal(serializeDom(dom), '<style>body { background: url(data:image/png;base64,dGVzdA==); }</style>');
         });
+
+        it('should apply relative path to loaded stylesheets', async () => {
+            const dom = new JSDOM('<link rel="stylesheet" href="foo/style.css">');
+
+            await allInline(
+                dom.window.document,
+                readCallback(
+                    { src: 'foo/style.css', type: 'text', ret: 'body { background: url(bg.jpg); }'},
+                    { src: 'foo/bg.jpg', type: 'data-uri', ret: 'data:image/png;base64,dGVzdA=='},
+                ),
+            );
+
+            assert.equal(serializeDom(dom), '<style>body { background: url(data:image/png;base64,dGVzdA==); }</style>');
+        });
+
+        it('should apply relative path from imported stylesheets', async () => {
+            const dom = new JSDOM('<style>@import url("foo/base.css");</style>', {
+                url: "https://example.org/",
+            });
+
+            await allInline(
+                dom.window.document,
+                readCallback(
+                    { src: 'foo/base.css', type: 'text', ret: 'body { background: url(bg.jpg); }'},
+                    { src: 'foo/bg.jpg', type: 'data-uri', ret: 'data:image/png;base64,dGVzdA=='},
+                ),
+            );
+
+            assert.equal(serializeDom(dom), '<style>body { background: url(data:image/png;base64,dGVzdA==); }</style>');
+        });
     });
 
     describe('iframe', function () {
@@ -255,6 +285,40 @@ describe('allInline()', () => {
             );
 
             assert.equal(serializeDom(dom), '<iframe src="hello.html"></iframe>');
+        });
+    });
+});
+
+describe('wrapRead()', () => {
+    describe('when applied to a path', () => {
+        const read = wrapRead('/path/to/file', async src => src);
+
+        it('modified a relative path', async () => {
+            assert.equal(await read('foo/bar', 'text'), '/path/to/foo/bar');
+        });
+
+        it('does not modify an absolute path', async () => {
+            assert.equal(await read('/foo/bar', 'text'), '/foo/bar');
+        });
+
+        it('does not modify a url', async () => {
+            assert.equal(await read('https://example.org/foo', 'text'), 'https://example.org/foo');
+        });
+    });
+
+    describe('when applied to an full URL', () => {
+        const read = wrapRead('https://example.com/path/to/file', async src => src);
+
+        it('modified a relative path', async () => {
+            assert.equal(await read('foo/bar', 'text'), 'https://example.com/path/to/foo/bar');
+        });
+
+        it('modifies an absolute path', async () => {
+            assert.equal(await read('/foo/bar', 'text'), 'https://example.com/foo/bar');
+        });
+
+        it('does not modify a url', async () => {
+            assert.equal(await read('https://example.org/foo', 'text'), 'https://example.org/foo');
         });
     });
 });

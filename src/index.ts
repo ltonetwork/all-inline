@@ -1,6 +1,8 @@
 import * as css from './css';
 import {ReadFunction} from "./types";
 
+export {default as wrapRead} from "./wrap-read";
+
 async function embedSrc(element: Element, read: ReadFunction): Promise<void> {
     if (!element.hasAttribute('src')) return;
 
@@ -38,19 +40,6 @@ async function inlineScript(script: HTMLScriptElement, read: ReadFunction): Prom
     script.textContent = contents;
 }
 
-async function inlineCSS(link: HTMLLinkElement, read: ReadFunction): Promise<void> {
-    if (!link.hasAttribute('href')) return;
-
-    const src = link.getAttribute('href');
-    const contents = await read(src, 'text');
-    if (!contents) return;
-
-    const style = link.ownerDocument.createElement('style');
-    style.textContent = contents;
-
-    link.replaceWith(style);
-}
-
 async function inlineIframe(iframe: HTMLIFrameElement, read: ReadFunction): Promise<void> {
     if (!iframe.hasAttribute('src')) return;
 
@@ -60,6 +49,19 @@ async function inlineIframe(iframe: HTMLIFrameElement, read: ReadFunction): Prom
 
     iframe.removeAttribute('src');
     iframe.setAttribute('srcdoc', contents);
+}
+
+async function inlineCSS(link: HTMLLinkElement, read: ReadFunction): Promise<void> {
+    if (!link.hasAttribute('href')) return;
+
+    const src = link.getAttribute('href');
+    const contents = await read(src, 'text');
+    if (!contents) return;
+
+    const style = link.ownerDocument.createElement('style');
+    style.textContent = await css.embed(contents, read, src);
+
+    link.replaceWith(style);
 }
 
 async function embedStyle(style: HTMLStyleElement, read: ReadFunction): Promise<void> {
@@ -75,27 +77,23 @@ async function embedInlineStyle(element: Element, read: ReadFunction): Promise<v
     element.setAttribute('style', inlined);
 }
 
-export default async function (document: Document|Element, read: ReadFunction): Promise<void> {
+export default async function(document: Document|Element, read: ReadFunction): Promise<void> {
     const sources = Array.from(document.querySelectorAll('*[src]'))
         .filter(el => !['IFRAME', 'SCRIPT'].includes(el.tagName.toUpperCase()));
     const sourceSets = Array.from(document.querySelectorAll('*[srcset]'));
     const scripts = Array.from(document.getElementsByTagName('script'));
     const css = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
     const iframes = Array.from(document.getElementsByTagName('iframe'));
+    const styles = Array.from(document.getElementsByTagName('style'));
+    const inlineStyles = Array.from(document.querySelectorAll('[style*="url"]'));
 
     await Promise.all([
         ...sources.map(img => embedSrc(img, read)),
         ...sourceSets.map(img => embedSrcSet(img, read)),
         ...scripts.map(script => inlineScript(script, read)),
-        ...css.map(link => inlineCSS(link as HTMLLinkElement, read)),
         ...iframes.map(iframe => inlineIframe(iframe, read)),
-    ]);
-
-    const styles = Array.from(document.getElementsByTagName('style'));
-    const inlineStyles = Array.from(document.querySelectorAll('[style*="url"]'))
-
-    await Promise.all([
+        ...css.map(link => inlineCSS(link as HTMLLinkElement, read)),
         ...styles.map(style => embedStyle(style, read)),
-        ...inlineStyles.map(element => embedInlineStyle(element, read))
+        ...inlineStyles.map(element => embedInlineStyle(element, read)),
     ]);
 }

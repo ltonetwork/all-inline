@@ -10,6 +10,7 @@ import {
 } from '@adobe/css-tools'
 import unquote from './unquote';
 import {ReadFunction} from "./types";
+import wrapRead from "./wrap-read";
 
 async function processUrl(
     declarations: Array<CssDeclarationAST|CssCommentAST>,
@@ -44,7 +45,7 @@ async function processImport(rule: CssImportAST, read: ReadFunction): Promise<Cs
     if (!content) return [rule];
 
     const rules = parse(content).stylesheet.rules;
-    await embedAst(rules, read);
+    await embedAst(rules, wrapRead(src, read));
 
     return rules;
 }
@@ -82,9 +83,9 @@ async function embedAst(rules: CssAtRuleAST[], read: ReadFunction): Promise<void
     await embedImportAst(rules, read);
 }
 
-export async function embed(style: string, read: ReadFunction): Promise<string> {
-    const ast = parse(style, { source: '/style.css' });
-    await embedAst(ast.stylesheet.rules, read);
+export async function embed(style: string, read: ReadFunction, src?: string): Promise<string> {
+    const ast = parse(style, { source: src });
+    await embedAst(ast.stylesheet.rules, wrapRead(src, read));
 
     return stringify(ast);
 }
