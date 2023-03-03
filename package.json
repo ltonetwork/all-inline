@@ -14,7 +14,8 @@
   "license": "MIT",
   "main": "lib/index.js",
   "files": [
-    "lib"
+    "lib",
+    "src
   ],
   "devDependencies": {
     "@types/jsdom": "^20.0.1",
