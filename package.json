@@ -15,7 +15,7 @@
   "main": "lib/index.js",
   "files": [
     "lib",
-    "src
+    "src"
   ],
   "devDependencies": {
     "@types/jsdom": "^20.0.1",
